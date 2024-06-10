@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Caption Generator</title>
+    <style>
+        .container {
+            display: flex;
+            width: 80%;
+            max-width: 1200px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: auto;
+            margin-top: 50px;
+        }
+        .left-panel, .right-panel {
+            padding: 20px;
+            width: 50%;
+        }
+        .left-panel {
+            border-right: 1px solid #e0e0e0;
+        }
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .upload-box {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .upload-box input[type="file"] {
+            display: none;
+        }
+        .upload-box:hover {
+            border-color: #888;
+        }
+        .context-box {
+            margin-top: 20px;
+        }
+        .context-box textarea {
+            width: 100%;
+            height: 100px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .output-box {
+            width: 100%;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .output-box p {
+            font-size: 18px;
+            color: #333;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tabs button {
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #888;
+        }
+        .tabs button.active {
+            color: #333;
+            border-bottom: 2px solid #333;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        .generate-button {
+            background-color: #9b76c5;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .generate-button:hover {
+            background-color: #b39ddb;
+        }
+        .sample-images {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .sample-images img {
+            max-width: 150px;
+            max-height: 150px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+        .sample-images img:hover {
+            border-color: #9b76c5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <h2>Image Caption Generator</h2>
+            <p>Turning Moments into narratives with our image caption generator</p>
+            <div class="upload-box" onclick="document.getElementById('file-input').click();" 
+                 ondragover="handleDragOver(event)" 
+                 ondragenter="handleDragEnter(event)" 
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event)">
+                <input type="file" id="file-input" accept="image/*" onchange="previewImage()" style="display: none;">
+                <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                <p>Click or drag and drop to upload</p>
+                <p>SVG, PNG, JPG or GIF (max. 5mb)</p>
+            </div>
+            <img id="image-preview" class="preview-image" style="display: none;">
+            <button class="generate-button" onclick="generateCaption()" style="display: none;" id="generate-button">Generate Image Caption</button>
+        </div>
+        <div class="right-panel">
+            <div class="tabs">
+                <button class="active" onclick="showOutput()">Output</button>
+                <button onclick="showSamples()">Sample Images</button>
+            </div>
+            <div class="output-box" id="output-box">
+                <p>Your generated content will appear here.</p>
+            </div>
+            <div class="sample-images" style="display: none;" id="sample-images">
+                <h3>Sample Images</h3>
+                <img src="static/fun.jpg" onclick="useSample('sample1.jpg')" alt="Sample 1">
+                <img src="static/Smoke.jpg" onclick="useSample('sample2.jpg')" alt="Sample 2">
+                <img src="static/image.png" onclick="useSample('sample3.jpg')" alt="Sample 3">
+                <img src="static/shoe.jpg" onclick="useSample('sample4.jpg')" alt="Sample 4">
+            </div>
+        </div>
+    </div>
+    <script>
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelector('.upload-box').classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelector('.upload-box').classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelector('.upload-box').classList.remove('dragover');
+
+            const droppedFiles = e.dataTransfer.files;
+            if (droppedFiles.length > 0) {
+                const file = droppedFiles[0];
+                const reader = new FileReader();
+
+                reader.onload = function(evt) {
+                    const imagePreview = document.getElementById('image-preview');
+                    imagePreview.src = evt.target.result;
+                    imagePreview.style.display = 'block';
+                    document.getElementById('generate-button').style.display = 'block';
+                };
+
+                // Update the file input element with the dropped file
+                const fileInput = document.getElementById('file-input');
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function previewImage() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const imagePreview = document.getElementById('image-preview');
+                imagePreview.src = e.target.result;
+                imagePreview.style.display = 'block';
+                document.getElementById('generate-button').style.display = 'block';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function generateCaption() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const outputBox = document.getElementById('output-box');
+                outputBox.innerHTML = `<p>${data.captions[0]}</p>`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showOutput() {
+            document.querySelector('.tabs button.active').classList.remove('active');
+            document.querySelectorAll('.tabs button')[0].classList.add('active');
+            document.getElementById('output-box').style.display = 'block';
+            document.getElementById('sample-images').style.display = 'none';
+        }
+
+        function showSamples() {
+            document.querySelector('.tabs button.active').classList.remove('active');
+            document.querySelectorAll('.tabs button')[1].classList.add('active');
+            document.getElementById('output-box').style.display = 'none';
+            document.getElementById('sample-images').style.display = 'block';
+        }
+
+        function useSample(imagePath) {
+            const imagePreview = document.getElementById('image-preview');
+            imagePreview.src = imagePath;
+            imagePreview.style.display = 'block';
+            document.getElementById('generate-button').style.display = 'block';
+
+            // Create a Blob from the image URL
+            fetch(imagePath)
+                .then(response => response.blob())
+                .then(blob => {
+                    // Update the file input element with the Blob
+                    const fileInput = document.getElementById('file-input');
+                    const dataTransfer = new DataTransfer();
+                    const file = new File([blob], imagePath.split('/').pop(), { type: blob.type });
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                });
+        }
+    </script>
+</body>
+</html>
